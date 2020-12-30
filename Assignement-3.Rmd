@@ -1,0 +1,231 @@
+---
+title: "Assignement 3"
+author: "Kevin Mattes"
+date: "25/02/2020"
+fontsize: 11pt
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Question 1
+
+a) The main diffrence between K-means and K-Medoids clustering is that K-Means is clustering is centered on on averages (mean) and K-mediods is on medoids
+
+b) The main limitation of both K-means and K-Medoids clustering is non-speherical clusters and that we have to specify k up-front, problems will arise when selecting the wrong k. 
+
+## Question 2
+
+a) Cross-validation enables the use of all observations to be used for both training and testing.
+
+b) The dataset is partitioned into different complementary subsets, training the data on a designated testset and use the other subsets to evaluated the model's performance.
+
+c) The K in K-fold stands for the number of groups the data sample is to be split into.
+
+## Question 3
+Value of my seed: 1224
+```{r warning=FALSE, message=FALSE}
+setwd("C:/Users/Kevin/Desktop/Engineering 5/3DS3/Labs")
+
+library(randomForest)
+library(MASS)
+library(tree)
+library(gbm)
+library(e1071)
+
+data(Hitters,package="ISLR")
+Hitters<-na.omit(Hitters)
+Hitters$logSalary<-log(Hitters$Salary)
+
+Hitters<-Hitters[,-19]
+smp_size <- floor(0.75 * nrow(Hitters))
+set.seed(1224)
+train_ind <- sample(seq_len(nrow(Hitters)), size = smp_size)
+
+train <- Hitters[train_ind, ]
+test <- Hitters[-train_ind, ]
+
+```
+a) 
+```{r warning=FALSE, message=FALSE}
+rm(list=ls())
+
+library(randomForest)
+library(MASS)
+library(tree)
+library(gbm)
+library(e1071)
+library(caret)       
+library(rpart)       
+library(ipred) 
+
+data(Hitters,package="ISLR")
+Hitters<-na.omit(Hitters)
+Hitters$logSalary<-log(Hitters$Salary)
+
+
+Hitters<-Hitters[,-19]
+smp_size <- floor(0.75 * nrow(Hitters))
+set.seed(1224)
+train_ind <- sample(seq_len(nrow(Hitters)), size = smp_size)
+train <- Hitters[train_ind, ]
+test <- Hitters[-train_ind, ]
+
+
+hitters_bag <- train(
+  logSalary~.,
+  data = train,
+  method = "treebag",
+  trControl = trainControl(method = "cv", number = 10),
+  nbagg = 266,  
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+hitters_bag
+yhat.bag = predict(hitters_bag,newdata=test)
+hitters.test=Hitters[-train_ind,"logSalary"]
+mean((yhat.bag - hitters.test)^2)
+
+```
+MSE for test set =  0.1666743
+
+b) The dataset is partitioned by
+```{r warning=FALSE, message=FALSE}
+rm(list=ls())
+
+library(randomForest)
+library(MASS)
+library(tree)
+library(gbm)
+library(e1071)
+library(caret)       
+library(rpart)       
+library(ipred) 
+
+data(Hitters,package="ISLR")
+Hitters<-na.omit(Hitters)
+Hitters$logSalary<-log(Hitters$Salary)
+
+Hitters<-Hitters[,-19]
+smp_size <- floor(0.75 * nrow(Hitters))
+set.seed(1224)
+train_ind <- sample(seq_len(nrow(Hitters)), size = smp_size)
+train <- Hitters[train_ind, ]
+test <- Hitters[-train_ind, ]
+
+hitters.test=Hitters[-train_ind,"logSalary"]
+
+bag.hitters1=randomForest(logSalary~.,data=Hitters,subset=train_ind,mtry=19,importance=TRUE)
+bag.hitters1
+yhat.bag = predict(bag.hitters1,newdata=test)
+yhat.bag
+
+
+bag.hitters2=randomForest(logSalary~.,data=Hitters,subset=train_ind,mtry=6,importance=TRUE)
+bag.hitters2
+yhat.bag2 = predict(bag.hitters2,newdata=test)
+yhat.bag2
+
+
+bag.hitters3=randomForest(logSalary~.,data=Hitters,subset=train_ind,mtry=10,importance=TRUE)
+bag.hitters3
+yhat.bag3 = predict(bag.hitters3,newdata=test)
+yhat.bag3
+
+
+mean((yhat.bag - hitters.test)^2)
+mean((yhat.bag2 - hitters.test)^2)
+mean((yhat.bag3 - hitters.test)^2)
+```
+
+m=19 MRE =  0.1733373
+
+m=6  MRE =  0.1510467 (Best since values are dispersed closer to central mean)
+
+m=10 MRE = 0.1570635 
+
+c) 
+```{r warning=FALSE, message=FALSE}
+rm(list=ls())
+
+library(randomForest)
+library(MASS)
+library(tree)
+library(gbm)
+library(e1071)
+library(caret)       
+library(rpart)       
+library(ipred) 
+
+data(Hitters,package="ISLR")
+Hitters<-na.omit(Hitters)
+Hitters$logSalary<-log(Hitters$Salary)
+
+Hitters<-Hitters[,-19]
+smp_size <- floor(0.75 * nrow(Hitters))
+set.seed(1224)
+train_ind <- sample(seq_len(nrow(Hitters)), size = smp_size)
+train <- Hitters[train_ind, ]
+test <- Hitters[-train_ind, ]
+
+
+
+boost.hitters=gbm(logSalary~.,data=train,distribution="gaussian",n.trees=5000,interaction.depth=4)
+yhat.boost=predict(boost.hitters,newdata=test,n.trees=5000)
+yhat.boost
+
+boost.hitters2=gbm(logSalary~.,data=train,distribution="gaussian",n.trees=5000,interaction.depth=10)
+yhat.boost2=predict(boost.hitters2,newdata=test,n.trees=5000)
+yhat.boost2
+
+boost.hitters3=gbm(logSalary~.,data=train,distribution="gaussian",n.trees=5000,interaction.depth=20)
+yhat.boost3=predict(boost.hitters3,newdata=test,n.trees=5000)
+yhat.boost3
+
+hitters.test=Hitters[-train_ind,"logSalary"]
+mean((yhat.boost - hitters.test)^2)
+mean((yhat.boost2 - hitters.test)^2)
+mean((yhat.boost3 - hitters.test)^2)
+
+ 
+```
+
+depth=4 MRE =   0.3565768
+
+depth=10  MRE =   0.3326091 
+
+depth=20 MRE = 0.3283637 (best)
+
+d)
+```{r warning=FALSE, message=FALSE}
+rm(list=ls())
+
+library(randomForest)
+library(MASS)
+library(tree)
+library(gbm)
+library(e1071)
+library(caret)       
+library(rpart)       
+library(ipred) 
+
+data(Hitters,package="ISLR")
+Hitters<-na.omit(Hitters)
+Hitters$logSalary<-log(Hitters$Salary)
+
+Hitters<-Hitters[,-19]
+smp_size <- floor(0.75 * nrow(Hitters))
+set.seed(1224)
+train_ind <- sample(seq_len(nrow(Hitters)), size = smp_size)
+train <- Hitters[train_ind, ]
+test <- Hitters[-train_ind, ]
+
+hitters.test=Hitters[-train_ind,"logSalary"]
+
+bag.hitters2=randomForest(logSalary~.,data=Hitters,subset=train_ind,mtry=6,importance=TRUE)
+yhat.bag2 = predict(bag.hitters2,newdata=test)
+
+varImpPlot(bag.hitters2)
+ 
+```
+
+Summary: The variables with the highest %IncMSE scores are the ones that give the best prediction and contribute most to the model. In the bag.hitters2 graph CRUns ranks as the most important variable while Division is the least important as it has the lowest prediction power of this Random Forest Model.
