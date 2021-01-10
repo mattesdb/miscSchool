@@ -1,5 +1,4 @@
-//assign 2 smithrm3
-//q3
+//assign 2
 module ALU(input[7:0]a, input[7:0]b, input add_sub, input set_low, input set_high, output reg[7:0]result);
 always @(*)
 begin
